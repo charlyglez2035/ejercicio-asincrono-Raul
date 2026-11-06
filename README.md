@@ -5,7 +5,7 @@ subtitle: "Ejercicio asíncrono · Integración de Aplicaciones · UDEM · Módu
 
 **Integrantes:** Carlos Rodrigo Gómez González (652303) · _[Nombre] ([matrícula])_ · _[Nombre] ([matrícula])_
 
-**Animación del flujo JWT + compra (Ubiquitous):** _[ENLACE PENDIENTE — se agregará cuando se suba la animación]_
+**Animación del flujo JWT + compra (Ubiquitous):** https://ubiquitous.udem.edu/~iac-652303/library-jwt-compra/
 
 # 1. Investigación de tecnologías
 
@@ -149,7 +149,7 @@ Recorrido: **Cliente → ① Reverse Proxy (HTTPS 443) → ② API Gateway (JWT,
 4. `POST /pedidos/{id}/lineas` → descuenta stock en una transacción.
 5. `POST /pagos` → pago `pending`; un admin lo aprueba (`PATCH /pagos/{id}`) y el pedido pasa a `paid`.
 
-Animación en Ubiquitous: _[ENLACE PENDIENTE]_
+Animación en Ubiquitous: https://ubiquitous.udem.edu/~iac-652303/library-jwt-compra/
 
 ## 2.5 Beneficios, limitaciones y justificación
 
