@@ -1,0 +1,53 @@
+%%{init: {'theme':'base','themeVariables':{'fontFamily':'DejaVu Sans','fontSize':'15px','actorBkg':'#ffffff'}}}%%
+sequenceDiagram
+    autonumber
+    box rgb(220,233,250) CLIENTE
+    participant C as Cliente (web / Tkinter)
+    end
+    box rgb(253,235,208) INFRAESTRUCTURA
+    participant RP as Reverse Proxy (TLS :443)
+    participant GW as API Gateway (Kong)
+    participant LB as Load Balancer
+    end
+    box rgb(213,245,227) MICROSERVICIOS
+    participant L as Login
+    participant B as Books x3
+    participant P as Pedidos
+    participant PG as Pagos
+    end
+    box rgb(235,222,240) DATOS
+    participant R as Redis
+    participant DB as PostgreSQL
+    end
+    Note over C,DB: A) Autenticación JWT
+    C->>RP: POST /auth/login {identity, password}
+    RP->>GW: reenvía (ruta pública)
+    GW->>LB: /auth → upstream login
+    LB->>L: instancia sana
+    L->>DB: verifica bcrypt + email verificado
+    L->>R: guarda session:sid y refresh:hash
+    L-->>C: 200 {access_token (HS256, 20 min), refresh_token}
+    Note over C,DB: B) Compra (Authorization: Bearer token)
+    C->>RP: GET /books (público)
+    RP->>GW: reenvía
+    GW->>LB: /books
+    LB->>B: Least Connections (Books-1/2/3)
+    B->>R: books:list (caché 60 s)
+    B-->>C: 200 catálogo
+    C->>RP: POST /pedidos  Bearer JWT
+    RP->>GW: reenvía
+    GW->>GW: valida firma, exp, iss, aud + rate limit
+    GW->>LB: /pedidos (+ X-User-Id, X-Role)
+    LB->>P: instancia sana
+    P->>R: ¿jti revocado?
+    P->>DB: INSERT customer_order (pending)
+    P-->>C: 201 {order_id}
+    C->>GW: POST /pedidos/{id}/lineas {isbn, qty}
+    GW->>P: (JWT validado)
+    P->>DB: SELECT book FOR UPDATE · stock − qty
+    P-->>C: 201 línea agregada
+    C->>GW: POST /pagos {order_id, amount, method}
+    GW->>PG: (JWT validado, dueño del pedido)
+    PG->>DB: INSERT payment (pending)
+    PG-->>C: 201 pago pending
+    Note over GW,PG: Admin: PATCH /pagos/{id} status=approved → pedido pasa a paid

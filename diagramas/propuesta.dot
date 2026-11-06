@@ -1,0 +1,38 @@
+digraph G {
+  rankdir=LR; bgcolor="white"; pad=0.3; nodesep=0.22; ranksep=0.7; newrank=true;
+  fontname="DejaVu Sans"; node [fontname="DejaVu Sans", fontsize=12, style="filled,rounded", shape=box, penwidth=1.4];
+  edge [fontname="DejaVu Sans", fontsize=10, color="#555555"];
+  labelloc=t; fontsize=20; label="Arquitectura PROPUESTA de Library  ·  una sola dirección pública: https://api.library.mx\n ";
+  subgraph cluster_c { label="CLIENTES"; style="rounded,dashed"; color="#1E5AA8"; fontcolor="#1E5AA8";
+    web [label="Navegador\n(web monolito)", fillcolor="#DCE9FA", color="#1E5AA8"];
+    tk  [label="Cliente Tkinter", fillcolor="#DCE9FA", color="#1E5AA8"];
+    el  [label="App Electron", fillcolor="#DCE9FA", color="#1E5AA8"];
+  }
+  subgraph cluster_i { label="INFRAESTRUCTURA (capa de entrada)"; style="rounded"; color="#CA6F1E"; fontcolor="#CA6F1E";
+    rp [label="① REVERSE PROXY\nNginx / GCP HTTPS LB frontend\n• único :443, TLS (HTTPS)\n• oculta puertos 5000-5005\n• cabeceras X-Forwarded-*\n• WAF (Cloud Armor)", fillcolor="#FDEBD0", color="#CA6F1E"];
+    gw [label="② API GATEWAY  (Kong)\n• enrutamiento por ruta\n• valida JWT HS256 (firma, exp, iss, aud)\n• control de acceso por rol\n• rate limiting · CORS central\n• logs y métricas", fillcolor="#FAD7A0", color="#CA6F1E"];
+    lb [label="③ LOAD BALANCER\n(upstreams)\n• Least Connections\n• health check GET /health\n• saca instancias caídas", fillcolor="#F8C471", color="#CA6F1E"];
+  }
+  subgraph cluster_s { label="MICROSERVICIOS (red privada, sin IP pública)"; style="rounded"; color="#1E8449"; fontcolor="#1E8449";
+    login [label="Login  /auth/*\n:5000", fillcolor="#D5F5E3", color="#1E8449"];
+    subgraph cluster_b { label="Books ×3"; style="rounded,dashed"; color="#1E8449"; fontcolor="#1E8449";
+      b1 [label="Books-1 :5001", fillcolor="#D5F5E3", color="#1E8449"];
+      b2 [label="Books-2 :5001", fillcolor="#D5F5E3", color="#1E8449"];
+      b3 [label="Books-3 :5001", fillcolor="#D5F5E3", color="#1E8449"];
+    }
+    users [label="Users  /users/*\n:5002", fillcolor="#D5F5E3", color="#1E8449"];
+    authors [label="Authors  /authors/*\n:5003", fillcolor="#D5F5E3", color="#1E8449"];
+    pedidos [label="Pedidos  /pedidos/*\n:5004", fillcolor="#D5F5E3", color="#1E8449"];
+    pagos [label="Pagos  /pagos/*\n:5005", fillcolor="#D5F5E3", color="#1E8449"];
+  }
+  subgraph cluster_d { label="DATOS"; style="rounded"; color="#6C3483"; fontcolor="#6C3483";
+    pg [label="PostgreSQL\n(Cloud SQL)", shape=cylinder, fillcolor="#EBDEF0", color="#6C3483"];
+    rd [label="Redis\n(Memorystore)\njti revocados · caché", shape=cylinder, fillcolor="#EBDEF0", color="#6C3483"];
+  }
+  {web tk el} -> rp [color="#1E5AA8", label="HTTPS :443"];
+  rp -> gw [color="#CA6F1E", penwidth=2];
+  gw -> lb [color="#CA6F1E", penwidth=2, label="solo peticiones\nautorizadas"];
+  lb -> login; lb -> b1 [label="≈1/3"]; lb -> b2 [label="≈1/3"]; lb -> b3 [label="≈1/3"]; lb -> users; lb -> authors; lb -> pedidos; lb -> pagos;
+  {login b1 b2 b3 users authors pedidos pagos} -> pg [color="#6C3483", arrowsize=0.5];
+  {login b2 pedidos} -> rd [color="#6C3483", style=dashed, arrowsize=0.5];
+}

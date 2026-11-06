@@ -1,0 +1,30 @@
+digraph G {
+  rankdir=LR; bgcolor="white"; pad=0.3; nodesep=0.25; ranksep=0.9;
+  fontname="DejaVu Sans"; node [fontname="DejaVu Sans", fontsize=12, style="filled,rounded", shape=box, penwidth=1.4];
+  edge [fontname="DejaVu Sans", fontsize=10, color="#555555"];
+  labelloc=t; fontsize=20; label="Arquitectura ACTUAL de Library  (VM GCP maquina02 · IP pública 34.51.55.6)\n ";
+  subgraph cluster_c { label="CLIENTES"; style="rounded,dashed"; color="#1E5AA8"; fontcolor="#1E5AA8";
+    web [label="Navegador\n(web monolito Express :3000)", fillcolor="#DCE9FA", color="#1E5AA8"];
+    tk  [label="Cliente Tkinter\n(6 URLs *_SERVICE_URL)", fillcolor="#DCE9FA", color="#1E5AA8"];
+    el  [label="App Electron", fillcolor="#DCE9FA", color="#1E5AA8"];
+  }
+  fw [label="Firewall GCP\npermitir-locust-libreria\ntcp:3000, 5000-5005\norigen 0.0.0.0/0", shape=box, style="filled", fillcolor="#FDE2E2", color="#C0392B"];
+  subgraph cluster_s { label="MICROSERVICIOS FLASK (1 instancia c/u · HTTP sin TLS)"; style="rounded"; color="#1E8449"; fontcolor="#1E8449";
+    login [label="Login :5000\nemite JWT HS256\nrefresh / logout", fillcolor="#D5F5E3", color="#1E8449"];
+    books [label="Books (soap) :5001\ncatálogo + caché", fillcolor="#D5F5E3", color="#1E8449"];
+    users [label="Users :5002", fillcolor="#D5F5E3", color="#1E8449"];
+    authors [label="Authors :5003", fillcolor="#D5F5E3", color="#1E8449"];
+    pedidos [label="Pedidos :5004\nlíneas + stock", fillcolor="#D5F5E3", color="#1E8449"];
+    pagos [label="Pagos :5005", fillcolor="#D5F5E3", color="#1E8449"];
+  }
+  note [shape=note, style=filled, fillcolor="#FFF8DC", color="#B7950B", fontsize=11, label="Cada servicio repite:\n• validación JWT (shared/jwt_security.py)\n• mismo JWT_SECRET en 6 .env\n• CORS propio (6 variables)\n• sin rate limiting"];
+  subgraph cluster_d { label="DATOS"; style="rounded"; color="#6C3483"; fontcolor="#6C3483";
+    pg [label="PostgreSQL\nlibrary", shape=cylinder, fillcolor="#EBDEF0", color="#6C3483"];
+    rd [label="Redis\nsesiones · jti revocados · caché", shape=cylinder, fillcolor="#EBDEF0", color="#6C3483"];
+  }
+  {web tk el} -> fw [color="#1E5AA8"];
+  fw -> {login books users authors pedidos pagos} [color="#C0392B", label=""];
+  {login books users authors pedidos pagos} -> pg [color="#6C3483", arrowsize=0.6];
+  {login books users authors pedidos pagos} -> rd [color="#6C3483", style=dashed, arrowsize=0.6];
+  note -> pedidos [style=invis];
+}
