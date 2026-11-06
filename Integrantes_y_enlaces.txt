@@ -1,0 +1,21 @@
+Proxy, Load Balancer y API Gateway en Library
+Ejercicio asincrono - Integracion de Aplicaciones - UDEM - Modulo III
+
+Integrantes:
+- Mauricio Gallardo Barbosa - 588218
+- Luz Colunga - 593350
+- Carlos Rodrigo Gomez Gonzalez - 652303
+
+Damos nuestra palabra que hemos hecho esta actividad con integridad academica.
+
+Enlaces:
+- Presentacion (Canva): https://canva.link/rwl7ixen8phk1xb
+- Documento (Google Docs): https://docs.google.com/document/d/1cr6LjbYqZVo81Pt90o8_Li76HWNF7fMrhmkQhfsMFM4/edit
+- Animacion JWT + compra (Ubiquitous): https://ubiquitous.udem.edu/~iac-652303/library-jwt-compra/
+- Repositorio GitHub: https://github.com/charlyglez2035/ejercicio-asincrono-Raul
+
+Contenido del ZIP:
+1. Presentacion_Arquitectura_Library.pdf - presentacion completa (12 diapositivas)
+2. Documento_Library.pdf - investigacion, respuestas, reflexion y referencias
+3. Library_Proxy_LB_APIGateway.docx - mismo documento en Word con diagramas
+4. diagramas/ - arquitectura actual, arquitectura propuesta y flujo JWT + compra

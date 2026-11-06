@@ -3,7 +3,9 @@ title: "Proxy, Load Balancer y API Gateway en el proyecto Library"
 subtitle: "Ejercicio asíncrono · Integración de Aplicaciones · UDEM · Módulo III"
 ---
 
-**Integrantes:** Carlos Rodrigo Gómez González (652303) · _[Nombre] ([matrícula])_ · _[Nombre] ([matrícula])_
+**Integrantes:** Mauricio Gallardo Barbosa (588218) · Luz Colunga (593350) · Carlos Rodrigo Gómez González (652303)
+
+_Damos nuestra palabra que hemos hecho esta actividad con integridad académica._
 
 **Animación del flujo JWT + compra (Ubiquitous):** https://ubiquitous.udem.edu/~iac-652303/library-jwt-compra/
 
