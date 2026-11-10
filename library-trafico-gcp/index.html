@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Library · Simulador de tráfico</title>
+<style>
+  :root{
+    --bg:#f6f8fb; --panel:#fff; --ink:#0f172a; --muted:#5b6475; --line:#d5dbe5;
+    --cli:#2563eb; --cli-bg:#dbeafe; --inf:#ea7c12; --inf-bg:#ffedd5;
+    --svc:#16a34a; --svc-bg:#dcfce7; --dat:#7c3aed; --dat-bg:#ede9fe; --err:#dc2626;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:"Segoe UI",system-ui,-apple-system,Roboto,sans-serif}
+  header,main{max-width:1260px;margin:0 auto;padding:0 20px}
+  header{padding-top:18px}
+  h1{font-size:22px;margin:0 0 4px}
+  .sub{color:var(--muted);font-size:13px;line-height:1.45}
+  main{display:grid;gap:14px;padding-bottom:24px;margin-top:10px}
+  .stage{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:6px;overflow:hidden}
+  svg{width:100%;height:auto;display:block}
+  .row{display:grid;grid-template-columns:1fr 360px;gap:14px}
+  @media(max-width:920px){.row{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+  .lbl{font-size:11px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;color:var(--muted)}
+  .btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+  button{font:inherit;font-size:14px;border:1px solid var(--line);background:#fff;border-radius:10px;padding:8px 12px;cursor:pointer;color:var(--ink)}
+  button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+  button.warn.on{background:var(--err);border-color:var(--err)}
+  .slider{display:flex;align-items:center;gap:10px;margin-top:12px;font-size:14px}
+  input[type=range]{flex:1}
+  #explain{font-size:14.5px;line-height:1.55;margin-top:8px;min-height:92px}
+  #explain b{color:var(--ink)}
+  .stats{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:8px}
+  .stat{border:1px solid var(--line);border-radius:10px;padding:8px;text-align:center}
+  .stat .n{font-size:22px;font-weight:800;font-variant-numeric:tabular-nums}
+  .stat .t{font-size:11px;color:var(--muted)}
+  .bars{margin-top:10px;display:grid;gap:6px}
+  .bar{display:grid;grid-template-columns:70px 1fr 46px;align-items:center;gap:8px;font-size:13px}
+  .track{height:12px;background:#eef2f7;border-radius:6px;overflow:hidden}
+  .fill{height:100%;background:var(--svc);border-radius:6px;transition:width .3s}
+  .legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--muted);padding:6px 10px 2px}
+  .legend i{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+  .node rect{stroke-width:1.8}
+  .node text{font-weight:700;text-anchor:middle;dominant-baseline:middle;pointer-events:none}
+  .node .s{font-weight:500;font-size:11px;fill:#475569}
+  .down rect{fill:#f1f5f9 !important;stroke:#94a3b8 !important;stroke-dasharray:6 4}
+  .flash rect{stroke:var(--err) !important;stroke-width:4}
+</style>
+</head>
+<body>
+<header>
+  <h1>Library en GCP · Simulador de tráfico</h1>
+  <div class="sub">Arquitectura recomendada por el benchmark: <b>Cloud Load Balancing</b> (reverse proxy + balanceador de borde, con Cloud Armor) → <b>Kong</b> (API Gateway: JWT HS256, rate limiting, CORS, rutas y balanceo con health checks) → microservicios → Cloud SQL y Memorystore. Integración de Aplicaciones · UDEM — Mauricio Gallardo Barbosa (588218), Luz Colunga (593350), Carlos Rodrigo Gómez González (652303)</div>
+</header>
+<main>
+  <div class="stage">
+    <svg id="svg" viewBox="0 0 1200 560" role="img" aria-label="Simulación del tráfico de Library">
+      <g id="zones"></g><g id="edges"></g><g id="nodes"></g><g id="dots"></g><g id="tags"></g>
+    </svg>
+    <div class="legend">
+      <span><i style="background:#f59e0b"></i>/auth/login</span>
+      <span><i style="background:#2563eb"></i>/books</span>
+      <span><i style="background:#16a34a"></i>/pedidos</span>
+      <span><i style="background:#7c3aed"></i>/pagos</span>
+      <span><i style="background:#dc2626"></i>rechazada (401 / 429 / 503)</span>
+      <span><i style="background:#94a3b8"></i>health check</span>
+    </div>
+  </div>
+  <div class="row">
+    <div class="card">
+      <div class="lbl">Escenario</div>
+      <div class="btns" id="scen">
+        <button data-s="normal" class="on">1 · Tráfico normal</button>
+        <button data-s="pico">2 · Pico de búsquedas</button>
+        <button data-s="token">3 · Tokens inválidos</button>
+        <button data-s="ataque">4 · Fuerza bruta al login</button>
+        <button data-s="caida" class="warn">5 · Se cae Books-2</button>
+      </div>
+      <div class="slider">Tráfico <input id="rate" type="range" min="1" max="12" value="4"> <span id="rateV"></span></div>
+      <div id="explain"></div>
+    </div>
+    <div class="card">
+      <div class="lbl">Contadores</div>
+      <div class="stats">
+        <div class="stat"><div class="n" id="cTot">0</div><div class="t">total</div></div>
+        <div class="stat"><div class="n" id="cOk" style="color:var(--svc)">0</div><div class="t">2xx</div></div>
+        <div class="stat"><div class="n" id="c401" style="color:var(--err)">0</div><div class="t">401</div></div>
+        <div class="stat"><div class="n" id="c429" style="color:var(--err)">0</div><div class="t">429</div></div>
+        <div class="stat"><div class="n" id="c503" style="color:var(--err)">0</div><div class="t">reintentos</div></div>
+      </div>
+      <div class="lbl" style="margin-top:12px">Least Connections en Books</div>
+      <div class="bars" id="bars"></div>
+      <div class="btns"><button id="reset">↺ Reiniciar contadores</button><button id="pause">⏸ Pausa</button></div>
+    </div>
+  </div>
+</main>
+<script>
+const ns="http://www.w3.org/2000/svg";
+const $=id=>document.getElementById(id);
+const N={
+  web:{x:70,y:150,w:110,h:46,t:"Navegador",k:"cli"},
+  tk:{x:70,y:240,w:110,h:46,t:"Tkinter",k:"cli"},
+  el:{x:70,y:330,w:110,h:46,t:"Electron",k:"cli"},
+  bot:{x:70,y:440,w:110,h:46,t:"Atacante",k:"bot"},
+  edge:{x:300,y:290,w:170,h:150,t:"Cloud LB",s:["① Reverse proxy","HTTPS :443 · Cloud Armor","reparte entre nodos Kong"],k:"inf"},
+  kong:{x:550,y:290,w:180,h:190,t:"Kong",s:["② API Gateway","JWT HS256 · rol","rate limit · CORS","③ balancea upstreams","health check /health"],k:"inf"},
+  login:{x:820,y:60,w:150,h:40,t:"Login :5000",k:"svc"},
+  b1:{x:820,y:130,w:150,h:40,t:"Books-1",k:"svc"},
+  b2:{x:820,y:180,w:150,h:40,t:"Books-2",k:"svc"},
+  b3:{x:820,y:230,w:150,h:40,t:"Books-3",k:"svc"},
+  users:{x:820,y:300,w:150,h:40,t:"Users :5002",k:"svc"},
+  authors:{x:820,y:350,w:150,h:40,t:"Authors :5003",k:"svc"},
+  ped:{x:820,y:420,w:150,h:40,t:"Pedidos :5004",k:"svc"},
+  pag:{x:820,y:490,w:150,h:40,t:"Pagos :5005",k:"svc"},
+  sql:{x:1080,y:230,w:150,h:70,t:"Cloud SQL",s:["PostgreSQL"],k:"dat"},
+  redis:{x:1080,y:380,w:150,h:70,t:"Memorystore",s:["Redis · jti · caché"],k:"dat"}
+};
+const COL={cli:["--cli-bg","--cli"],bot:["#fee2e2","--err"],inf:["--inf-bg","--inf"],svc:["--svc-bg","--svc"],dat:["--dat-bg","--dat"]};
+const cv=v=>v.startsWith("--")?`var(${v})`:v;
+// zonas
+const Z=[["CLIENTES",15,20,110,500,"--cli"],["INFRAESTRUCTURA",205,20,450,500,"--inf"],["MICROSERVICIOS · red privada",735,20,170,525,"--svc"],["DATOS",995,170,170,330,"--dat"]];
+Z.forEach(([t,x,y,w,h,c])=>{const r=document.createElementNS(ns,"rect");Object.entries({x,y:y+12,width:w,height:h,rx:14,fill:"none",stroke:cv(c),"stroke-dasharray":"6 5","stroke-width":1.3}).forEach(([a,v])=>r.setAttribute(a,v));$("zones").appendChild(r);
+  const tx=document.createElementNS(ns,"text");tx.textContent=t;tx.setAttribute("x",x+w/2);tx.setAttribute("y",y+6);tx.setAttribute("text-anchor","middle");tx.setAttribute("font-size","11");tx.setAttribute("font-weight","700");tx.setAttribute("letter-spacing","1");tx.setAttribute("fill",cv(c));$("zones").appendChild(tx);});
+// aristas
+const E=[["web","edge"],["tk","edge"],["el","edge"],["bot","edge"],["edge","kong"],...["login","b1","b2","b3","users","authors","ped","pag"].map(s=>["kong",s]),["login","redis"],["b1","redis"],["b2","redis"],["b3","redis"],["ped","sql"],["pag","sql"],["users","sql"],["authors","sql"],["b1","sql"],["b2","sql"],["b3","sql"]];
+E.forEach(([a,b])=>{const l=document.createElementNS(ns,"line");const A=N[a],B=N[b];
+  Object.entries({x1:A.x+A.w/2,y1:A.y,x2:B.x-B.w/2,y2:B.y,stroke:"#d6dde8","stroke-width":1.4}).forEach(([k,v])=>l.setAttribute(k,v));$("edges").appendChild(l);});
+const el={};
+for(const id in N){const n=N[id],g=document.createElementNS(ns,"g");g.setAttribute("class","node");
+  const r=document.createElementNS(ns,"rect");const [bg,st]=COL[n.k];
+  Object.entries({x:n.x-n.w/2,y:n.y-n.h/2,width:n.w,height:n.h,rx:10,fill:cv(bg),stroke:cv(st)}).forEach(([k,v])=>r.setAttribute(k,v));g.appendChild(r);
+  const lines=n.s||[];const y0=n.y-(lines.length*15)/2-(lines.length?6:0);
+  const t=document.createElementNS(ns,"text");t.setAttribute("x",n.x);t.setAttribute("y",lines.length?y0:n.y);t.setAttribute("font-size",lines.length?"16":"13");t.setAttribute("fill",cv(st));t.textContent=n.t;g.appendChild(t);
+  lines.forEach((s,i)=>{const u=document.createElementNS(ns,"text");u.setAttribute("class","s");u.setAttribute("x",n.x);u.setAttribute("y",y0+20+i*15);u.textContent=s;g.appendChild(u);});
+  $("nodes").appendChild(g);el[id]=g;}
+
+// estado
+const ROUTES={auth:{c:"#f59e0b",to:"login",p:.15},books:{c:"#2563eb",to:"books",p:.5},ped:{c:"#16a34a",to:"ped",p:.2},pag:{c:"#7c3aed",to:"pag",p:.15}};
+let scen="normal",rate=4,paused=false;
+const st={tot:0,ok:0,e401:0,e429:0,retry:0,books:{b1:0,b2:0,b3:0},active:{b1:0,b2:0,b3:0}};
+const health={b2:true}; let b2Up=true, lastHC=0, botWindow=[];
+const dots=[];
+function pt(id,side){const n=N[id];return side==="in"?{x:n.x-n.w/2,y:n.y}:side==="out"?{x:n.x+n.w/2,y:n.y}:{x:n.x,y:n.y};}
+function mk(color,r=6){const c=document.createElementNS(ns,"circle");c.setAttribute("r",r);c.setAttribute("fill",color);c.setAttribute("stroke","#fff");c.setAttribute("stroke-width",1.5);$("dots").appendChild(c);return c;}
+function tag(x,y,txt,color){const t=document.createElementNS(ns,"text");t.setAttribute("x",x);t.setAttribute("y",y);t.setAttribute("font-size","13");t.setAttribute("font-weight","800");t.setAttribute("fill",color);t.setAttribute("text-anchor","middle");t.textContent=txt;$("tags").appendChild(t);
+  let o=1;const f=()=>{o-=.025;t.setAttribute("opacity",o);t.setAttribute("y",+t.getAttribute("y")-.5);o>0?requestAnimationFrame(f):t.remove();};requestAnimationFrame(f);}
+function pickBooks(){const c=["b1","b2","b3"].filter(b=>b!=="b2"||health.b2);const m=Math.min(...c.map(b=>st.active[b]));const best=c.filter(b=>st.active[b]===m);rr=(rr+1)%best.length;return best[rr];}
+let rr=0;
+function spawn(){
+  const fromBot=scen==="ataque"&&Math.random()<.6;
+  let route; if(fromBot) route="auth"; else {const r=Math.random();let acc=0;const w=scen==="pico"?{auth:.05,books:.8,ped:.1,pag:.05}:{auth:.15,books:.5,ped:.2,pag:.15};for(const k in w){acc+=w[k];if(r<=acc){route=k;break;}} route=route||"books";}
+  const src=fromBot?"bot":["web","tk","el"][Math.floor(Math.random()*3)];
+  const R=ROUTES[route];const d={c:mk(R.c),route,src,stage:0,t:0,fromBot,badToken:scen==="token"&&route!=="auth"&&Math.random()<.4};
+  d.path=[pt(src,"out"),pt("edge","in"),pt("edge","out"),pt("kong","in"),pt("kong","out")];
+  dots.push(d);st.tot++;
+}
+function decideAtKong(d){
+  if(d.badToken){d.reject="401";return;}
+  if(d.route==="auth"&&d.fromBot){const now=performance.now();botWindow=botWindow.filter(t=>now-t<3000);if(botWindow.length>=5){d.reject="429";return;}botWindow.push(now);}
+  let target=ROUTES[d.route].to;
+  if(target==="books"){target=pickBooks();st.active[target]++;d.bk=target;}
+  d.target=target;d.path.push(pt(target,"in"));
+}
+function step(dt){
+  for(let i=dots.length-1;i>=0;i--){const d=dots[i];
+    if(d.stage===4&&!d.decided&&!d.back){d.decided=true;decideAtKong(d);if(d.reject){continue;}}
+    if(d.stage>=d.path.length-1){
+      if(d.reject){ // rebote
+        if(!d.back){d.back=true;tag(N.kong.x,N.kong.y-110,d.reject,"#dc2626");d.c.setAttribute("fill","#dc2626");st["e"+d.reject]++;d.path=[pt("kong","in"),pt("edge","out"),pt("edge","in"),pt(d.src,"out")];d.stage=0;d.t=0;continue;}
+        d.c.remove();dots.splice(i,1);continue;}
+      if(d.bk==="b2"&&!b2Up&&!d.retried){ // conexión fallida -> reintento
+        d.retried=true;st.retry++;st.active.b2--;el.b2.classList.add("flash");setTimeout(()=>el.b2.classList.remove("flash"),300);
+        tag(N.b2.x,N.b2.y-26,"falla → reintento","#dc2626");
+        const nb=["b1","b3"].reduce((a,b)=>st.active[b]<st.active[a]?b:a);st.active[nb]++;d.bk=nb;d.path=[pt("b2","in"),pt("kong","out"),pt(nb,"in")];d.stage=0;d.t=0;continue;}
+      if(d.bk){st.active[d.bk]--;st.books[d.bk]++;}
+      st.ok++;d.c.remove();dots.splice(i,1);continue;}
+    const a=d.path[d.stage],b=d.path[d.stage+1];const len=Math.hypot(b.x-a.x,b.y-a.y)||1;
+    d.t+=dt*0.42/len*(d.stage===1||d.stage===3?3:1);
+    if(d.t>=1){d.t=0;d.stage++;}else{d.c.setAttribute("cx",a.x+(b.x-a.x)*d.t);d.c.setAttribute("cy",a.y+(b.y-a.y)*d.t);}
+  }
+}
+// health checks visibles
+function healthCheck(now){
+  if(now-lastHC<1200)return; lastHC=now;
+  ["b1","b2","b3"].forEach(b=>{const c=mk("#94a3b8",4);const A=pt("kong","out"),B=pt(b,"in");let t=0;
+    const f=()=>{t+=.05;c.setAttribute("cx",A.x+(B.x-A.x)*t);c.setAttribute("cy",A.y+(B.y-A.y)*t);if(t<1)requestAnimationFrame(f);else{c.remove();
+      if(b==="b2"){const was=health.b2;health.b2=b2Up;if(was&&!b2Up){tag(N.b2.x+40,N.b2.y-26,"✗ fuera de rotación","#dc2626");el.b2.classList.add("down");}
+        if(!was&&b2Up){tag(N.b2.x+40,N.b2.y-26,"✓ de vuelta","#16a34a");el.b2.classList.remove("down");}}}};requestAnimationFrame(f);});
+}
+const TXT={
+  normal:"Los clientes usan <b>una sola URL HTTPS</b>. <b>Cloud LB</b> termina TLS y filtra con Cloud Armor; <b>Kong</b> valida el JWT y decide la ruta; para Books elige la réplica con <b>menos conexiones activas</b>. Los puntos grises son los <b>health checks</b> a <code>/health</code>.",
+  pico:"Pico de búsquedas: casi todo el tráfico va a <b>/books</b>. Kong reparte entre <b>Books-1, 2 y 3 con Least Connections</b> (mira las barras): ninguna réplica se satura y el resto de servicios ni se entera. En GCP, el autoescalado agregaría más réplicas.",
+  token:"Algunas peticiones llegan con un <b>JWT inválido o vencido</b>. Kong responde <b>401</b> y la petición <b>rebota en el gateway</b>: nunca llega a Pedidos ni a Pagos, así que no gasta sus recursos.",
+  ataque:"Un atacante intenta <b>adivinar contraseñas</b> en /auth/login. Kong permite 5 intentos por ventana por IP y responde <b>429 Too Many Requests</b> al resto. Los usuarios legítimos siguen entrando con normalidad.",
+  caida:"<b>Books-2 se cae.</b> Las peticiones que ya iban hacia él fallan y Kong las <b>reintenta</b> en otra réplica. En el siguiente <b>health check</b> lo saca de la rotación: el tráfico sigue por Books-1 y Books-3 sin errores para el usuario. Vuelve a pulsar el botón para recuperarlo."
+};
+document.querySelectorAll("#scen button").forEach(b=>b.onclick=()=>{
+  const s=b.dataset.s;
+  if(s==="caida"){b2Up=!b2Up;b.classList.toggle("on",!b2Up);b.textContent=b2Up?"5 · Se cae Books-2":"5 · Recuperar Books-2";$("explain").innerHTML=b2Up?"<b>Books-2 vuelve.</b> Cuando pasa sus health checks, Kong lo regresa a la rotación y el reparto se equilibra otra vez.":TXT.caida;return;}
+  scen=s;document.querySelectorAll("#scen button:not(.warn)").forEach(x=>x.classList.toggle("on",x===b));
+  if(s==="pico")$("rate").value=10,setRate(); if(s==="normal")$("rate").value=4,setRate();
+  $("explain").innerHTML=TXT[s];});
+function setRate(){rate=+$("rate").value;$("rateV").textContent=rate+"×";}
+$("rate").oninput=setRate;setRate();
+$("explain").innerHTML=TXT.normal;
+$("reset").onclick=()=>{Object.assign(st,{tot:0,ok:0,e401:0,e429:0,retry:0});st.books={b1:0,b2:0,b3:0};};
+$("pause").onclick=()=>{paused=!paused;$("pause").textContent=paused?"▶ Seguir":"⏸ Pausa";};
+const bars=$("bars");["b1","b2","b3"].forEach(b=>{bars.insertAdjacentHTML("beforeend",`<div class="bar"><span>${N[b].t}</span><div class="track"><div class="fill" id="f_${b}"></div></div><span id="n_${b}" style="text-align:right;font-variant-numeric:tabular-nums">0</span></div>`);});
+function ui(){$("cTot").textContent=st.tot;$("cOk").textContent=st.ok;$("c401").textContent=st.e401;$("c429").textContent=st.e429;$("c503").textContent=st.retry;
+  const m=Math.max(1,...Object.values(st.books));["b1","b2","b3"].forEach(b=>{$("f_"+b).style.width=(st.books[b]/m*100)+"%";$("n_"+b).textContent=st.books[b];});}
+let last=performance.now(),acc=0;
+function loop(now){const dt=Math.min(now-last,50);last=now;
+  if(!paused){acc+=dt*rate/700;while(acc>=1){spawn();acc--;}step(dt);healthCheck(now);}
+  ui();requestAnimationFrame(loop);}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
