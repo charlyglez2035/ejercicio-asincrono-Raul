@@ -9,6 +9,8 @@ _Damos nuestra palabra que hemos hecho esta actividad con integridad académica.
 
 **Animación del flujo JWT + compra (Ubiquitous):** https://ubiquitous.udem.edu/~iac-652303/library-jwt-compra/ (código fuente en `library-jwt-compra/index.html`)
 
+**Benchmark de herramientas:** carpeta `benchmark/` · Simulador de tráfico: https://ubiquitous.udem.edu/~iac-652303/library-trafico-gcp/
+
 # 1. Investigación de tecnologías
 
 ## 1.1 Proxy y Reverse Proxy
@@ -129,7 +131,7 @@ Con un upstream `books` de tres instancias (Books-1/2/3) en **Least Connections*
 
 **¿Qué solución recomendarían para desplegar Library en GCP y por qué?**
 1. **External Application Load Balancer de GCP** como reverse proxy y balanceador de borde: IP única, certificado HTTPS administrado y **Cloud Armor** (WAF y límites por IP).
-2. **Kong** como API Gateway (en GKE Autopilot o en un grupo de instancias). Su plugin JWT soporta **HS256**, el algoritmo que ya usa Login. GCP API Gateway espera claves públicas (JWKS), lo que obligaría a migrar a RS256, y Apigee es excesivo para el tamaño del proyecto.
+2. **Kong** como API Gateway (en GKE Autopilot o en un grupo de instancias). Su plugin JWT soporta **HS256**, el algoritmo que ya usa Login. GCP API Gateway solo aceptaría la clave simétrica publicándola como archivo en una URL y no ofrece rate limiting por usuario ni health checks propios, y Apigee es excesivo para el tamaño del proyecto.
 3. **Microservicios en grupos de instancias administrados o GKE** con health checks, autohealing y autoescalado (Books con mínimo 3 réplicas), en red privada.
 4. **Cloud SQL (PostgreSQL)** y **Memorystore (Redis)** administrados.
 
