@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Library · Flujo JWT y compra</title>
+<style>
+  :root{
+    --bg:#f6f8fb; --panel:#ffffff; --ink:#14213d; --muted:#5b6475; --line:#d5dbe5;
+    --cli:#1e5aa8; --cli-bg:#dce9fa;
+    --inf:#ca6f1e; --inf-bg:#fdebd0;
+    --svc:#1e8449; --svc-bg:#d5f5e3;
+    --dat:#6c3483; --dat-bg:#ebdef0;
+    --ok:#1e8449; --err:#c0392b; --tok:#f1c40f;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:"Segoe UI",system-ui,-apple-system,Roboto,sans-serif}
+  header{padding:18px 24px 6px;max-width:1240px;margin:0 auto}
+  h1{font-size:22px;margin:0 0 4px}
+  .sub{color:var(--muted);font-size:13px}
+  main{max-width:1240px;margin:0 auto;padding:8px 24px 24px;display:grid;gap:14px}
+  .stage{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:8px;overflow:hidden}
+  svg{width:100%;height:auto;display:block}
+  .legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--muted);padding:4px 8px}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .sw{width:12px;height:12px;border-radius:3px;display:inline-block;border:1.5px solid}
+  .panel{display:grid;grid-template-columns:1fr 340px;gap:14px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+  .phase{font-size:11px;letter-spacing:.08em;text-transform:uppercase;font-weight:700}
+  .phase.a{color:var(--cli)} .phase.b{color:var(--svc)} .phase.c{color:var(--err)}
+  #title{font-size:18px;font-weight:700;margin:4px 0 6px}
+  #detail{font-size:14px;line-height:1.5;color:#2c3445;min-height:64px}
+  code,.mono{font-family:Consolas,"Cascadia Code",ui-monospace,monospace;font-size:12.5px;background:#eef2f7;border-radius:5px;padding:1px 5px}
+  .controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px}
+  button{font:inherit;font-size:14px;border:1px solid var(--line);background:#fff;border-radius:9px;padding:7px 14px;cursor:pointer;color:var(--ink)}
+  button.primary{background:var(--ink);color:#fff;border-color:var(--ink)}
+  button:disabled{opacity:.45;cursor:default}
+  .progress{flex:1;min-width:120px;height:6px;background:#e7ebf1;border-radius:4px;overflow:hidden}
+  .progress i{display:block;height:100%;width:0;background:var(--inf);transition:width .3s}
+  #counter{font-size:12px;color:var(--muted);min-width:54px;text-align:right}
+  ol{margin:0;padding-left:20px;font-size:13px;line-height:1.45;max-height:330px;overflow:auto}
+  ol li{color:var(--muted);cursor:pointer;padding:2px 0}
+  ol li.done{color:#2c3445}
+  ol li.cur{color:var(--ink);font-weight:700}
+  .tokenbox{margin-top:10px;font-size:12px;color:var(--muted)}
+  #tok{font-family:Consolas,ui-monospace,monospace;font-size:11.5px;word-break:break-all;color:#7d6608;background:#fef9e7;border:1px dashed #d4ac0d;border-radius:8px;padding:6px 8px;margin-top:4px;display:none}
+  /* svg */
+  .node rect{rx:10;stroke-width:1.8}
+  .node text{font-size:13px;font-weight:600;text-anchor:middle;dominant-baseline:middle;pointer-events:none}
+  .node .s{font-size:10.5px;font-weight:500;fill:#4a5263}
+  .node.on rect{stroke-width:3.4;filter:url(#glow)}
+  .node.down rect{fill:#f2f3f5 !important;stroke:#a0a7b4 !important;stroke-dasharray:5 4}
+  .edge{stroke:#c7cfdb;stroke-width:1.6;fill:none}
+  .edge.hot{stroke:var(--inf);stroke-width:2.6}
+  .zone{fill:none;stroke-dasharray:6 5;stroke-width:1.3}
+  .zl{font-size:11px;font-weight:700;letter-spacing:.08em}
+  #pkt circle{stroke:#fff;stroke-width:2}
+  #pktlabel{font-size:11px;font-weight:700;fill:var(--ink)}
+  #badge{font-size:12px;font-weight:700}
+  @media (max-width:900px){.panel{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Library · Autenticación JWT y compra</h1>
+  <div class="sub">Recorrido de las solicitudes en la arquitectura propuesta: Reverse Proxy → API Gateway → Load Balancer → microservicios (Login, Books, Pedidos, Pagos). Integración de Aplicaciones · UDEM · Módulo III — Mauricio Gallardo Barbosa (588218), Luz Colunga (593350), Carlos Rodrigo Gómez González (652303)</div>
+</header>
+<main>
+  <div class="stage">
+    <svg id="svg" viewBox="0 0 1200 600" role="img" aria-label="Diagrama animado del flujo de solicitudes">
+      <defs>
+        <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+          <feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+      <!-- zonas -->
+      <rect class="zone" x="20" y="150" width="150" height="320" rx="14" stroke="var(--cli)"/>
+      <text class="zl" x="95" y="140" text-anchor="middle" fill="var(--cli)">CLIENTES</text>
+      <rect class="zone" x="200" y="150" width="560" height="320" rx="14" stroke="var(--inf)"/>
+      <text class="zl" x="480" y="140" text-anchor="middle" fill="var(--inf)">INFRAESTRUCTURA · https://api.library.mx :443</text>
+      <rect class="zone" x="800" y="20" width="200" height="560" rx="14" stroke="var(--svc)"/>
+      <text class="zl" x="900" y="14" text-anchor="middle" fill="var(--svc)">MICROSERVICIOS (red privada)</text>
+      <rect class="zone" x="1030" y="150" width="155" height="370" rx="14" stroke="var(--dat)"/>
+      <text class="zl" x="1107" y="140" text-anchor="middle" fill="var(--dat)">DATOS</text>
+      <g id="edges"></g>
+      <g id="nodes"></g>
+      <g id="pkt" style="display:none">
+        <circle r="11" fill="var(--inf)"/>
+        <text id="pktlabel" y="-18" text-anchor="middle"></text>
+      </g>
+      <g id="badgeg" style="display:none">
+        <rect x="35" y="395" width="120" height="26" rx="13" fill="#fef9e7" stroke="#d4ac0d"/>
+        <text id="badge" x="95" y="409" text-anchor="middle" dominant-baseline="middle" fill="#7d6608">🔑 JWT (20 min)</text>
+      </g>
+    </svg>
+    <div class="legend">
+      <span><i class="sw" style="background:var(--cli-bg);border-color:var(--cli)"></i>Clientes</span>
+      <span><i class="sw" style="background:var(--inf-bg);border-color:var(--inf)"></i>Infraestructura (roles distintos)</span>
+      <span><i class="sw" style="background:var(--svc-bg);border-color:var(--svc)"></i>Microservicios</span>
+      <span><i class="sw" style="background:var(--dat-bg);border-color:var(--dat)"></i>Datos</span>
+      <span><i class="sw" style="background:var(--inf);border-color:var(--inf)"></i>Petición</span>
+      <span><i class="sw" style="background:var(--ok);border-color:var(--ok)"></i>Respuesta</span>
+      <span><i class="sw" style="background:var(--err);border-color:var(--err)"></i>Rechazo</span>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="card">
+      <div id="phase" class="phase a">A · Autenticación</div>
+      <div id="title">Presiona ▶ Reproducir</div>
+      <div id="detail">La animación recorre cada salto de la petición. Puedes avanzar paso a paso o hacer clic en cualquier paso de la lista.</div>
+      <div class="controls">
+        <button id="prev" aria-label="Paso anterior">◀</button>
+        <button id="play" class="primary">▶ Reproducir</button>
+        <button id="next" aria-label="Paso siguiente">▶|</button>
+        <button id="reset">↺ Reiniciar</button>
+        <div class="progress"><i id="bar"></i></div>
+        <span id="counter">0 / 0</span>
+      </div>
+      <div class="tokenbox">Token en el cliente:
+        <div id="tok">eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9 . {"user_id":7,"role_id":2,"iss":"library-login","aud":"library-book","exp":+20min,"jti":"…"} . firma HS256</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="phase" style="color:var(--muted)">Pasos</div>
+      <ol id="list"></ol>
+    </div>
+  </div>
+</main>
+<script>
+const N = {
+  cli:{x:95,y:310,w:130,h:56,t:"Cliente",s:"web · Tkinter · Electron",k:"cli"},
+  rp:{x:290,y:310,w:160,h:66,t:"① Reverse Proxy",s:"TLS :443 · oculta puertos",k:"inf"},
+  gw:{x:480,y:310,w:172,h:66,t:"② API Gateway",s:"Kong · JWT · rate limit · CORS",k:"inf"},
+  lb:{x:670,y:310,w:140,h:66,t:"③ Load Balancer",s:"least conn · /health",k:"inf"},
+  login:{x:900,y:70,w:160,h:50,t:"Login :5000",s:"/auth/*",k:"svc"},
+  b1:{x:900,y:160,w:160,h:40,t:"Books-1 :5001",s:"",k:"svc"},
+  b2:{x:900,y:210,w:160,h:40,t:"Books-2 :5001",s:"",k:"svc"},
+  b3:{x:900,y:260,w:160,h:40,t:"Books-3 :5001",s:"",k:"svc"},
+  users:{x:900,y:330,w:160,h:40,t:"Users :5002",s:"",k:"svc"},
+  authors:{x:900,y:380,w:160,h:40,t:"Authors :5003",s:"",k:"svc"},
+  ped:{x:900,y:450,w:160,h:50,t:"Pedidos :5004",s:"/pedidos/*",k:"svc"},
+  pag:{x:900,y:530,w:160,h:50,t:"Pagos :5005",s:"/pagos/*",k:"svc"},
+  redis:{x:1107,y:240,w:130,h:66,t:"Redis",s:"sesiones · jti · caché",k:"dat"},
+  pg:{x:1107,y:420,w:130,h:66,t:"PostgreSQL",s:"library",k:"dat"}
+};
+const E = [["cli","rp"],["rp","gw"],["gw","lb"],["lb","login"],["lb","b1"],["lb","b2"],["lb","b3"],["lb","users"],["lb","authors"],["lb","ped"],["lb","pag"],
+  ["login","redis"],["login","pg"],["b2","redis"],["ped","redis"],["ped","pg"],["pag","pg"],["b1","pg"],["b3","pg"]];
+const IN=["cli","rp","gw","lb"];
+
+const S = [
+ {ph:"a",t:"Inicio de sesión",d:"El cliente envía <code>POST /auth/login</code> con <code>{identity, password}</code> a la <b>única dirección pública</b> <code>https://api.library.mx</code>.",p:["cli","rp"],lb:"POST /auth/login"},
+ {ph:"a",t:"Reverse Proxy: TLS y reenvío",d:"El <b>reverse proxy</b> termina HTTPS, agrega <code>X-Forwarded-For</code> y reenvía al gateway. Los puertos 5000-5005 no son visibles desde Internet.",p:["rp","gw"],lb:"HTTPS → HTTP interno"},
+ {ph:"a",t:"API Gateway: ruta pública",d:"<code>/auth/login</code> es una ruta pública: el <b>gateway</b> no exige token, pero aplica <b>rate limiting</b> (5 intentos/min por IP) contra fuerza bruta y la enruta al upstream <code>login</code>.",p:["gw","lb"],lb:"/auth → login"},
+ {ph:"a",t:"Load Balancer → Login",d:"El <b>balanceador</b> elige una instancia sana de Login según su health check <code>GET /health</code>.",p:["lb","login"],lb:"instancia sana"},
+ {ph:"a",t:"Login valida credenciales",d:"Login verifica el hash <b>bcrypt</b> y que el correo esté verificado en PostgreSQL.",p:["login","pg"],lb:"SELECT usuario"},
+ {ph:"a",t:"Login registra la sesión",d:"Guarda <code>session:sid</code> y el hash del <code>refresh_token</code> (un solo uso) en Redis.",p:["login","redis"],lb:"SET session"},
+ {ph:"a",t:"Respuesta: JWT emitido",d:"Regresa <code>200 {access_token, refresh_token}</code>. El access token es <b>HS256</b>, dura <b>20 min</b> e incluye <code>iss=library-login</code>, <code>aud=library-book</code> y un <code>jti</code> único.",p:["login","lb","gw","rp","cli"],back:1,lb:"200 + JWT",tok:1},
+ {ph:"b",t:"Consultar catálogo (público)",d:"<code>GET /books</code> no requiere token. Pasa por proxy y gateway hacia el upstream <code>books</code>.",p:["cli","rp","gw","lb"],lb:"GET /books",tok:1},
+ {ph:"b",t:"Balanceo entre 3 instancias de Books",d:"Con <b>Least Connections</b> el balanceador manda la petición a <b>Books-2</b>, la instancia con menos conexiones activas en este momento.",p:["lb","b2"],lb:"least_conn → Books-2",hl:["b1","b2","b3"],tok:1},
+ {ph:"b",t:"Caché compartida en Redis",d:"Books-2 responde desde la caché <code>books:list</code> (60 s) en Redis. Como la caché es compartida, las 3 instancias ven los mismos datos.",p:["b2","redis","b2","lb","gw","rp","cli"],back:1,lb:"200 catálogo",tok:1},
+ {ph:"c",t:"Petición sin token → rechazada",d:"Si alguien llama <code>POST /pedidos</code> <b>sin</b> <code>Authorization</code>, el <b>gateway responde 401</b> y la petición <b>nunca llega</b> a Pedidos: no gasta recursos del servicio.",p:["cli","rp","gw"],lb:"POST /pedidos (sin token)",rej:1,tok:1},
+ {ph:"b",t:"Crear pedido con Bearer JWT",d:"El cliente envía <code>POST /pedidos</code> con <code>Authorization: Bearer &lt;JWT&gt;</code>.",p:["cli","rp","gw"],lb:"POST /pedidos + Bearer",tok:1},
+ {ph:"b",t:"Gateway valida el JWT",d:"El <b>gateway</b> verifica firma HS256, <code>exp</code>, <code>iss</code> y <code>aud</code>, aplica rate limit y CORS, y agrega <code>X-User-Id</code> / <code>X-Role</code>.",p:["gw"],lb:"✔ firma · exp · iss · aud",hl:["gw"],tok:1},
+ {ph:"b",t:"Load Balancer → Pedidos",d:"Petición autorizada; el balanceador la envía a una instancia sana de Pedidos.",p:["gw","lb","ped"],lb:"/pedidos",tok:1},
+ {ph:"b",t:"Defensa en profundidad: revocación",d:"Pedidos consulta en Redis si el <code>jti</code> fue revocado (logout). El gateway no conoce esa lista, por eso el servicio conserva <code>require_bearer</code>.",p:["ped","redis","ped"],lb:"¿jti revocado? no",tok:1},
+ {ph:"b",t:"Pedido creado",d:"<code>INSERT customer_order</code> con estado <b>pending</b>. Respuesta <code>201 {order_id}</code>.",p:["ped","pg","ped","lb","gw","rp","cli"],back:1,lb:"201 order_id",tok:1},
+ {ph:"b",t:"Agregar libro al pedido",d:"<code>POST /pedidos/{id}/lineas {isbn, qty}</code>. Pedidos hace <code>SELECT … FOR UPDATE</code> sobre el libro y descuenta stock en una sola transacción.",p:["cli","rp","gw","lb","ped","pg"],lb:"POST /lineas · stock − qty",tok:1},
+ {ph:"b",t:"Línea agregada",d:"Respuesta <code>201</code>. Si dos clientes compran el último ejemplar al mismo tiempo, el bloqueo evita vender de más.",p:["pg","ped","lb","gw","rp","cli"],back:1,lb:"201 línea",tok:1},
+ {ph:"b",t:"Registrar el pago",d:"<code>POST /pagos {order_id, amount, method}</code> con el mismo JWT. El gateway lo valida y lo enruta a Pagos.",p:["cli","rp","gw","lb","pag"],lb:"POST /pagos + Bearer",tok:1},
+ {ph:"b",t:"Pago pendiente",d:"Pagos verifica que el pedido sea del usuario y hace <code>INSERT payment</code> con estado <b>pending</b>. Respuesta <code>201</code>.",p:["pag","pg","pag","lb","gw","rp","cli"],back:1,lb:"201 pago pending",tok:1},
+ {ph:"b",t:"Aprobación del pago (admin)",d:"Un admin envía <code>PATCH /pagos/{id} status=approved</code>; el gateway exige <b>rol admin</b>. El pedido pasa a <b>paid</b>. ✅ Compra completa.",p:["cli","rp","gw","lb","pag","pg"],lb:"PATCH approved → paid",hl:["pag","ped"],tok:1},
+ {ph:"c",t:"Escenario: Pedidos se cae",d:"El health check de Pedidos falla: el <b>balanceador lo saca de la rotación</b> y el gateway responde <code>503</code> rápido en JSON. Books, Login y Pagos siguen funcionando; el autohealing de GCP recrea la instancia.",p:["cli","rp","gw","lb"],lb:"POST /pedidos → 503",rej:1,down:["ped"],tok:1}
+];
+
+const svg=document.getElementById("svg"),ns="http://www.w3.org/2000/svg";
+const eg=document.getElementById("edges"),ng=document.getElementById("nodes");
+const edgeEls={};
+function key(a,b){return [a,b].sort().join("|")}
+E.forEach(([a,b])=>{const l=document.createElementNS(ns,"line");l.setAttribute("class","edge");
+  l.setAttribute("x1",N[a].x);l.setAttribute("y1",N[a].y);l.setAttribute("x2",N[b].x);l.setAttribute("y2",N[b].y);eg.appendChild(l);edgeEls[key(a,b)]=l;});
+const nodeEls={};
+for(const id in N){const n=N[id];const g=document.createElementNS(ns,"g");g.setAttribute("class","node");
+  const r=document.createElementNS(ns,"rect");r.setAttribute("x",n.x-n.w/2);r.setAttribute("y",n.y-n.h/2);r.setAttribute("width",n.w);r.setAttribute("height",n.h);
+  r.setAttribute("fill",`var(--${n.k}-bg)`);r.setAttribute("stroke",`var(--${n.k})`);g.appendChild(r);
+  const t=document.createElementNS(ns,"text");t.setAttribute("x",n.x);t.setAttribute("y",n.s?n.y-8:n.y);t.textContent=n.t;t.setAttribute("fill",`var(--${n.k})`);g.appendChild(t);
+  if(n.s){const s=document.createElementNS(ns,"text");s.setAttribute("class","s");s.setAttribute("x",n.x);s.setAttribute("y",n.y+11);s.textContent=n.s;g.appendChild(s);}
+  ng.appendChild(g);nodeEls[id]=g;}
+
+const pkt=document.getElementById("pkt"),pc=pkt.querySelector("circle"),pl=document.getElementById("pktlabel");
+const list=document.getElementById("list");
+S.forEach((s,i)=>{const li=document.createElement("li");li.textContent=s.t;li.onclick=()=>{stop();go(i)};list.appendChild(li)});
+
+let cur=-1,playing=false,anim=null,timer=null;
+const reduce=window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+function clearHi(){for(const id in nodeEls)nodeEls[id].classList.remove("on","down");for(const k in edgeEls)edgeEls[k].classList.remove("hot")}
+function render(i){
+  const s=S[i];clearHi();
+  (s.hl||[]).forEach(id=>nodeEls[id].classList.add("on"));
+  (s.down||[]).forEach(id=>nodeEls[id].classList.add("down"));
+  for(let j=0;j<s.p.length-1;j++){const e=edgeEls[key(s.p[j],s.p[j+1])];if(e)e.classList.add("hot")}
+  const ph=document.getElementById("phase");
+  ph.className="phase "+s.ph;ph.textContent=s.ph==="a"?"A · Autenticación JWT":s.ph==="b"?"B · Compra (Login → Books → Pedidos → Pagos)":"Escenario de seguridad / falla";
+  document.getElementById("title").textContent=(i+1)+". "+s.t;
+  document.getElementById("detail").innerHTML=s.d;
+  document.getElementById("counter").textContent=(i+1)+" / "+S.length;
+  document.getElementById("bar").style.width=((i+1)/S.length*100)+"%";
+  [...list.children].forEach((li,k)=>{li.className=k<i?"done":k===i?"cur":""});
+  list.children[i].scrollIntoView({block:"nearest"});
+  document.getElementById("badgeg").style.display=s.tok?"":"none";
+  document.getElementById("tok").style.display=s.tok?"block":"none";
+  document.getElementById("prev").disabled=i<=0;document.getElementById("next").disabled=i>=S.length-1;
+}
+function go(i,onDone){
+  if(anim)cancelAnimationFrame(anim);
+  cur=i;render(i);const s=S[i];
+  const color=s.rej?"var(--err)":s.back?"var(--ok)":"var(--inf)";
+  pc.setAttribute("fill",color);pl.textContent=s.lb||"";pkt.style.display="";
+  const pts=s.p.map(id=>N[id]);
+  if(pts.length===1||reduce){const q=pts[pts.length-1];pkt.setAttribute("transform",`translate(${q.x},${q.y})`);pts.forEach((_,k)=>nodeEls[s.p[k]].classList.add("on"));finish();return}
+  const seg=520,total=seg*(pts.length-1);let t0=null;
+  function step(ts){if(!t0)t0=ts;let e=Math.min(ts-t0,total);const k=Math.min(Math.floor(e/seg),pts.length-2);const f=(e-k*seg)/seg;
+    const a=pts[k],b=pts[k+1];const x=a.x+(b.x-a.x)*ease(f),y=a.y+(b.y-a.y)*ease(f);
+    pkt.setAttribute("transform",`translate(${x},${y})`);nodeEls[s.p[k]].classList.add("on");
+    if(e<total){anim=requestAnimationFrame(step)}else{nodeEls[s.p[s.p.length-1]].classList.add("on");finish()}}
+  anim=requestAnimationFrame(step);
+  function finish(){
+    if(s.rej){const last=s.p[s.p.length-1];pl.textContent=(s.down?"503 Service Unavailable":"401 Unauthorized");}
+    if(onDone)timer=setTimeout(onDone,1600)}
+}
+function ease(f){return f<.5?2*f*f:1-Math.pow(-2*f+2,2)/2}
+function playFrom(i){playing=true;document.getElementById("play").textContent="⏸ Pausa";
+  go(i,()=>{if(!playing)return;if(i<S.length-1)playFrom(i+1);else stop()})}
+function stop(){playing=false;clearTimeout(timer);document.getElementById("play").textContent="▶ Reproducir"}
+document.getElementById("play").onclick=()=>{if(playing){stop();return}playFrom(cur>=S.length-1?0:cur+1)};
+document.getElementById("next").onclick=()=>{stop();if(cur<S.length-1)go(cur+1)};
+document.getElementById("prev").onclick=()=>{stop();if(cur>0)go(cur-1)};
+document.getElementById("reset").onclick=()=>{stop();if(anim)cancelAnimationFrame(anim);cur=-1;clearHi();pkt.style.display="none";
+  document.getElementById("badgeg").style.display="none";document.getElementById("tok").style.display="none";
+  document.getElementById("title").textContent="Presiona ▶ Reproducir";document.getElementById("detail").textContent="La animación recorre cada salto de la petición. Puedes avanzar paso a paso o hacer clic en cualquier paso de la lista.";
+  document.getElementById("counter").textContent="0 / "+S.length;document.getElementById("bar").style.width="0";[...list.children].forEach(li=>li.className="");
+  document.getElementById("prev").disabled=true;document.getElementById("next").disabled=false;};
+document.getElementById("counter").textContent="0 / "+S.length;document.getElementById("prev").disabled=true;
+</script>
+</body>
+</html>

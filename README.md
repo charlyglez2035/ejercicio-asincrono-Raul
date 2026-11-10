@@ -7,7 +7,7 @@ subtitle: "Ejercicio asíncrono · Integración de Aplicaciones · UDEM · Módu
 
 _Damos nuestra palabra que hemos hecho esta actividad con integridad académica._
 
-**Animación del flujo JWT + compra (Ubiquitous):** https://ubiquitous.udem.edu/~iac-652303/library-jwt-compra/
+**Animación del flujo JWT + compra (Ubiquitous):** https://ubiquitous.udem.edu/~iac-652303/library-jwt-compra/ (código fuente en `library-jwt-compra/index.html`)
 
 # 1. Investigación de tecnologías
 
