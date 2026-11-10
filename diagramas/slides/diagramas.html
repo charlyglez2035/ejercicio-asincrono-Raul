@@ -1,0 +1,222 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+  body{margin:0;background:#fff;font-family:Inter,sans-serif}
+  svg{display:block;margin:0 0 40px}
+  text{font-family:Inter,sans-serif}
+  .t{font-weight:700;fill:#fff}
+  .h{font-weight:800}
+  .s{font-weight:500}
+</style></head>
+<body>
+
+<!-- ============ A. ARQUITECTURA ACTUAL ============ -->
+<svg id="actual" width="1720" height="780" viewBox="0 0 1720 780">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#dc2626"/></marker>
+  </defs>
+  <!-- clientes -->
+  <text x="140" y="40" text-anchor="middle" class="h" font-size="22" fill="#1d4ed8" letter-spacing="2">CLIENTES</text>
+  <g font-size="22">
+    <rect x="30" y="120" width="220" height="80" rx="16" fill="#2563eb"/><text x="140" y="168" text-anchor="middle" class="t">Navegador</text>
+    <rect x="30" y="240" width="220" height="80" rx="16" fill="#2563eb"/><text x="140" y="288" text-anchor="middle" class="t">App Tkinter</text>
+    <rect x="30" y="360" width="220" height="80" rx="16" fill="#2563eb"/><text x="140" y="408" text-anchor="middle" class="t">App Electron</text>
+  </g>
+  <!-- flecha -->
+  <line x1="265" y1="280" x2="520" y2="280" stroke="#dc2626" stroke-width="6" marker-end="url(#ar)"/>
+  <text x="392" y="240" text-anchor="middle" class="h" font-size="22" fill="#b91c1c">7 URLs distintas</text>
+  <text x="392" y="320" text-anchor="middle" class="s" font-size="20" fill="#b91c1c">HTTP sin cifrar</text>
+  <!-- VM -->
+  <rect x="540" y="60" width="1150" height="470" rx="24" fill="#fff7ed" stroke="#f28c28" stroke-width="4" stroke-dasharray="14 10"/>
+  <text x="570" y="100" class="h" font-size="22" fill="#c2410c" letter-spacing="1">UNA SOLA VM EN GCP · todos los puertos abiertos a Internet</text>
+  <g font-size="22">
+    <rect x="575" y="130" width="250" height="110" rx="16" fill="#16a34a"/><text x="700" y="178" text-anchor="middle" class="t">Login</text><text x="700" y="212" text-anchor="middle" class="t" font-size="26">:5000</text>
+    <rect x="850" y="130" width="250" height="110" rx="16" fill="#16a34a"/><text x="975" y="178" text-anchor="middle" class="t">Books</text><text x="975" y="212" text-anchor="middle" class="t" font-size="26">:5001</text>
+    <rect x="1125" y="130" width="250" height="110" rx="16" fill="#16a34a"/><text x="1250" y="178" text-anchor="middle" class="t">Users</text><text x="1250" y="212" text-anchor="middle" class="t" font-size="26">:5002</text>
+    <rect x="1400" y="130" width="260" height="110" rx="16" fill="#16a34a"/><text x="1530" y="178" text-anchor="middle" class="t">Authors</text><text x="1530" y="212" text-anchor="middle" class="t" font-size="26">:5003</text>
+    <rect x="575" y="265" width="250" height="110" rx="16" fill="#16a34a"/><text x="700" y="313" text-anchor="middle" class="t">Pedidos</text><text x="700" y="347" text-anchor="middle" class="t" font-size="26">:5004</text>
+    <rect x="850" y="265" width="250" height="110" rx="16" fill="#16a34a"/><text x="975" y="313" text-anchor="middle" class="t">Pagos</text><text x="975" y="347" text-anchor="middle" class="t" font-size="26">:5005</text>
+    <rect x="1125" y="265" width="250" height="110" rx="16" fill="#64748b"/><text x="1250" y="313" text-anchor="middle" class="t">Web</text><text x="1250" y="347" text-anchor="middle" class="t" font-size="26">:3000</text>
+    <rect x="1400" y="265" width="125" height="110" rx="16" fill="#7c3aed"/><text x="1462" y="327" text-anchor="middle" class="t" font-size="18">PostgreSQL</text>
+    <rect x="1535" y="265" width="125" height="110" rx="16" fill="#7c3aed"/><text x="1597" y="327" text-anchor="middle" class="t" font-size="18">Redis</text>
+  </g>
+  <text x="1115" y="430" text-anchor="middle" class="s" font-size="21" fill="#7c2d12">Cada servicio valida el JWT por su cuenta · mismo secreto copiado en 6 archivos .env</text>
+  <text x="1115" y="470" text-anchor="middle" class="s" font-size="21" fill="#7c2d12">1 instancia por servicio · si una se cae, esa función desaparece</text>
+  <!-- problemas -->
+  <g font-size="23">
+    <rect x="30" y="590" width="540" height="150" rx="18" fill="#fef2f2" stroke="#dc2626" stroke-width="3"/>
+    <text x="60" y="640" class="h" fill="#b91c1c" font-size="40">1</text><text x="110" y="638" class="h" fill="#7f1d1d">7 puertos expuestos</text>
+    <text x="110" y="675" class="s" fill="#7f1d1d" font-size="20">Superficie de ataque amplia</text><text x="110" y="705" class="s" fill="#7f1d1d" font-size="20">y el token viaja sin HTTPS</text>
+    <rect x="590" y="590" width="540" height="150" rx="18" fill="#fef2f2" stroke="#dc2626" stroke-width="3"/>
+    <text x="620" y="640" class="h" fill="#b91c1c" font-size="40">2</text><text x="670" y="638" class="h" fill="#7f1d1d">Seguridad repetida 6 veces</text>
+    <text x="670" y="675" class="s" fill="#7f1d1d" font-size="20">JWT, CORS y secreto en cada</text><text x="670" y="705" class="s" fill="#7f1d1d" font-size="20">servicio · sin rate limiting</text>
+    <rect x="1150" y="590" width="540" height="150" rx="18" fill="#fef2f2" stroke="#dc2626" stroke-width="3"/>
+    <text x="1180" y="640" class="h" fill="#b91c1c" font-size="40">3</text><text x="1230" y="638" class="h" fill="#7f1d1d">Sin alta disponibilidad</text>
+    <text x="1230" y="675" class="s" fill="#7f1d1d" font-size="20">Punto único de falla y no se</text><text x="1230" y="705" class="s" fill="#7f1d1d" font-size="20">puede escalar Books</text>
+  </g>
+</svg>
+
+<!-- ============ B. ARQUITECTURA PROPUESTA ============ -->
+<svg id="propuesta" width="1720" height="780" viewBox="0 0 1720 780">
+  <defs>
+    <marker id="ao" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#ea7c12"/></marker>
+    <marker id="ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#16a34a"/></marker>
+    <marker id="ap" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#7c3aed"/></marker>
+  </defs>
+  <!-- zonas -->
+  <text x="105" y="34" text-anchor="middle" class="h" font-size="20" fill="#1d4ed8" letter-spacing="2">CLIENTES</text>
+  <rect x="225" y="55" width="770" height="560" rx="24" fill="#fff7ed" stroke="#f28c28" stroke-width="3"/>
+  <text x="610" y="34" text-anchor="middle" class="h" font-size="20" fill="#c2410c" letter-spacing="2">INFRAESTRUCTURA · https://api.library.mx</text>
+  <rect x="1060" y="55" width="400" height="560" rx="24" fill="#f0fdf4" stroke="#16a34a" stroke-width="3"/>
+  <text x="1260" y="34" text-anchor="middle" class="h" font-size="20" fill="#15803d" letter-spacing="2">MICROSERVICIOS (privados)</text>
+  <rect x="1520" y="160" width="190" height="350" rx="24" fill="#f5f3ff" stroke="#7c3aed" stroke-width="3"/>
+  <text x="1615" y="140" text-anchor="middle" class="h" font-size="20" fill="#6d28d9" letter-spacing="2">DATOS</text>
+
+  <!-- clientes -->
+  <g font-size="21">
+    <rect x="10" y="185" width="190" height="72" rx="14" fill="#2563eb"/><text x="105" y="229" text-anchor="middle" class="t">Navegador</text>
+    <rect x="10" y="300" width="190" height="72" rx="14" fill="#2563eb"/><text x="105" y="344" text-anchor="middle" class="t">Tkinter</text>
+    <rect x="10" y="415" width="190" height="72" rx="14" fill="#2563eb"/><text x="105" y="459" text-anchor="middle" class="t">Electron</text>
+  </g>
+  <line x1="200" y1="336" x2="248" y2="336" stroke="#2563eb" stroke-width="6" marker-end="url(#ao)"/>
+
+  <!-- infra: 3 roles distintos -->
+  <g>
+    <rect x="252" y="140" width="225" height="390" rx="18" fill="#f28c28"/>
+    <circle cx="364" cy="195" r="30" fill="#fff"/><text x="364" y="206" text-anchor="middle" class="h" font-size="30" fill="#ea7c12">1</text>
+    <text x="364" y="268" text-anchor="middle" class="t" font-size="25">Reverse</text><text x="364" y="300" text-anchor="middle" class="t" font-size="25">Proxy</text>
+    <text x="364" y="360" text-anchor="middle" class="s" font-size="19" fill="#fff">Una sola URL</text>
+    <text x="364" y="388" text-anchor="middle" class="s" font-size="19" fill="#fff">HTTPS :443</text>
+    <text x="364" y="430" text-anchor="middle" class="s" font-size="19" fill="#fff">Oculta los</text>
+    <text x="364" y="458" text-anchor="middle" class="s" font-size="19" fill="#fff">puertos internos</text>
+    <text x="364" y="505" text-anchor="middle" class="h" font-size="17" fill="#7c2d12">PROTEGE</text>
+
+    <rect x="497" y="140" width="225" height="390" rx="18" fill="#ea7c12"/>
+    <circle cx="609" cy="195" r="30" fill="#fff"/><text x="609" y="206" text-anchor="middle" class="h" font-size="30" fill="#ea7c12">2</text>
+    <text x="609" y="268" text-anchor="middle" class="t" font-size="25">API</text><text x="609" y="300" text-anchor="middle" class="t" font-size="25">Gateway</text>
+    <text x="609" y="360" text-anchor="middle" class="s" font-size="19" fill="#fff">Valida JWT y rol</text>
+    <text x="609" y="388" text-anchor="middle" class="s" font-size="19" fill="#fff">Rate limit · CORS</text>
+    <text x="609" y="430" text-anchor="middle" class="s" font-size="19" fill="#fff">Decide la ruta</text>
+    <text x="609" y="458" text-anchor="middle" class="s" font-size="19" fill="#fff">(Kong)</text>
+    <text x="609" y="505" text-anchor="middle" class="h" font-size="17" fill="#7c2d12">DECIDE</text>
+
+    <rect x="742" y="140" width="225" height="390" rx="18" fill="#c2410c"/>
+    <circle cx="854" cy="195" r="30" fill="#fff"/><text x="854" y="206" text-anchor="middle" class="h" font-size="30" fill="#c2410c">3</text>
+    <text x="854" y="268" text-anchor="middle" class="t" font-size="25">Load</text><text x="854" y="300" text-anchor="middle" class="t" font-size="25">Balancer</text>
+    <text x="854" y="360" text-anchor="middle" class="s" font-size="19" fill="#fff">Reparte entre</text>
+    <text x="854" y="388" text-anchor="middle" class="s" font-size="19" fill="#fff">réplicas sanas</text>
+    <text x="854" y="430" text-anchor="middle" class="s" font-size="19" fill="#fff">Health check</text>
+    <text x="854" y="458" text-anchor="middle" class="s" font-size="19" fill="#fff">GET /health</text>
+    <text x="854" y="505" text-anchor="middle" class="h" font-size="17" fill="#fde68a">REPARTE</text>
+    <line x1="477" y1="336" x2="495" y2="336" stroke="#7c2d12" stroke-width="5" marker-end="url(#ao)"/>
+    <line x1="722" y1="336" x2="740" y2="336" stroke="#7c2d12" stroke-width="5" marker-end="url(#ao)"/>
+  </g>
+  <text x="610" y="585" text-anchor="middle" class="s" font-size="20" fill="#9a3412">Una petición sin token válido se rechaza aquí (401) y nunca llega a los servicios</text>
+
+  <!-- LB a servicios -->
+  <g stroke="#16a34a" stroke-width="3" fill="none" marker-end="url(#ag)">
+    <path d="M967 336 C1010 336 1030 110 1078 110"/>
+    <path d="M967 336 C1010 336 1030 200 1078 200"/>
+    <path d="M967 336 C1020 336 1030 310 1078 310"/>
+    <path d="M967 336 C1020 336 1030 390 1078 390"/>
+    <path d="M967 336 C1010 336 1030 470 1078 470"/>
+    <path d="M967 336 C1010 336 1030 550 1078 550"/>
+  </g>
+  <g font-size="21">
+    <rect x="1080" y="80" width="360" height="60" rx="12" fill="#16a34a"/><text x="1100" y="118" class="t">Login</text><text x="1420" y="118" text-anchor="end" class="s" fill="#dcfce7" font-size="19">/auth</text>
+    <!-- Books x3 stacked -->
+    <rect x="1096" y="160" width="344" height="60" rx="12" fill="#86efac"/>
+    <rect x="1088" y="168" width="344" height="60" rx="12" fill="#4ade80"/>
+    <rect x="1080" y="176" width="344" height="60" rx="12" fill="#16a34a"/><text x="1100" y="214" class="t">Books ×3</text><text x="1404" y="214" text-anchor="end" class="s" fill="#dcfce7" font-size="19">/books</text>
+    <rect x="1080" y="280" width="360" height="60" rx="12" fill="#16a34a"/><text x="1100" y="318" class="t">Users</text><text x="1420" y="318" text-anchor="end" class="s" fill="#dcfce7" font-size="19">/users</text>
+    <rect x="1080" y="360" width="360" height="60" rx="12" fill="#16a34a"/><text x="1100" y="398" class="t">Authors</text><text x="1420" y="398" text-anchor="end" class="s" fill="#dcfce7" font-size="19">/authors</text>
+    <rect x="1080" y="440" width="360" height="60" rx="12" fill="#16a34a"/><text x="1100" y="478" class="t">Pedidos</text><text x="1420" y="478" text-anchor="end" class="s" fill="#dcfce7" font-size="19">/pedidos</text>
+    <rect x="1080" y="520" width="360" height="60" rx="12" fill="#16a34a"/><text x="1100" y="558" class="t">Pagos</text><text x="1420" y="558" text-anchor="end" class="s" fill="#dcfce7" font-size="19">/pagos</text>
+  </g>
+  <line x1="1460" y1="336" x2="1536" y2="336" stroke="#7c3aed" stroke-width="5" marker-end="url(#ap)"/>
+  <g font-size="21">
+    <rect x="1540" y="200" width="150" height="110" rx="14" fill="#7c3aed"/><text x="1615" y="250" text-anchor="middle" class="t">PostgreSQL</text><text x="1615" y="280" text-anchor="middle" class="s" fill="#ede9fe" font-size="17">Cloud SQL</text>
+    <rect x="1540" y="360" width="150" height="110" rx="14" fill="#7c3aed"/><text x="1615" y="410" text-anchor="middle" class="t">Redis</text><text x="1615" y="440" text-anchor="middle" class="s" fill="#ede9fe" font-size="17">caché · sesiones</text>
+  </g>
+  <!-- recorrido -->
+  <rect x="10" y="660" width="1700" height="90" rx="18" fill="#0f172a"/>
+  <text x="860" y="716" text-anchor="middle" class="t" font-size="25">Cliente  →  ① protege  →  ② decide  →  ③ reparte  →  microservicio  →  datos</text>
+</svg>
+
+<!-- ============ C. FLUJO JWT + COMPRA ============ -->
+<svg id="compra" width="1720" height="800" viewBox="0 0 1720 800">
+  <defs>
+    <marker id="mo" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#ea7c12"/></marker>
+    <marker id="mg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#16a34a"/></marker>
+  </defs>
+  <!-- encabezados: x centers -->
+  <g font-size="19">
+    <rect x="10" y="10" width="170" height="64" rx="12" fill="#2563eb"/><text x="95" y="49" text-anchor="middle" class="t">Cliente</text>
+    <rect x="215" y="10" width="170" height="64" rx="12" fill="#f28c28"/><text x="300" y="38" text-anchor="middle" class="t">① Reverse</text><text x="300" y="62" text-anchor="middle" class="t">Proxy</text>
+    <rect x="420" y="10" width="170" height="64" rx="12" fill="#ea7c12"/><text x="505" y="38" text-anchor="middle" class="t">② API</text><text x="505" y="62" text-anchor="middle" class="t">Gateway</text>
+    <rect x="625" y="10" width="170" height="64" rx="12" fill="#c2410c"/><text x="710" y="38" text-anchor="middle" class="t">③ Load</text><text x="710" y="62" text-anchor="middle" class="t">Balancer</text>
+    <rect x="860" y="10" width="190" height="64" rx="12" fill="#16a34a"/><text x="955" y="49" text-anchor="middle" class="t">Login</text>
+    <rect x="1085" y="10" width="190" height="64" rx="12" fill="#16a34a"/><text x="1180" y="49" text-anchor="middle" class="t">Books ×3</text>
+    <rect x="1310" y="10" width="190" height="64" rx="12" fill="#16a34a"/><text x="1405" y="49" text-anchor="middle" class="t">Pedidos</text>
+    <rect x="1530" y="10" width="180" height="64" rx="12" fill="#16a34a"/><text x="1620" y="49" text-anchor="middle" class="t">Pagos</text>
+  </g>
+  <g stroke="#cbd5e1" stroke-width="3" stroke-dasharray="8 8">
+    <line x1="95" y1="74" x2="95" y2="790"/><line x1="300" y1="74" x2="300" y2="790"/><line x1="505" y1="74" x2="505" y2="790"/><line x1="710" y1="74" x2="710" y2="790"/>
+    <line x1="955" y1="74" x2="955" y2="790"/><line x1="1180" y1="74" x2="1180" y2="790"/><line x1="1405" y1="74" x2="1405" y2="790"/><line x1="1620" y1="74" x2="1620" y2="790"/>
+  </g>
+  <!-- fases -->
+  <rect x="10" y="92" width="1700" height="176" rx="14" fill="#2563eb" opacity="0.06"/>
+  <text x="1700" y="118" text-anchor="end" class="h" font-size="17" fill="#1d4ed8" letter-spacing="2">A · AUTENTICACIÓN</text>
+  <rect x="10" y="282" width="1700" height="508" rx="14" fill="#16a34a" opacity="0.06"/>
+  <text x="1700" y="308" text-anchor="end" class="h" font-size="17" fill="#15803d" letter-spacing="2">B · COMPRA</text>
+
+  <!-- helper: request arrows -->
+  <g font-size="19">
+    <!-- 1 login -->
+    <line x1="95" y1="150" x2="945" y2="150" stroke="#ea7c12" stroke-width="5" marker-end="url(#mo)"/>
+    <circle cx="300" cy="150" r="9" fill="#f28c28"/><circle cx="505" cy="150" r="9" fill="#ea7c12"/><circle cx="710" cy="150" r="9" fill="#c2410c"/>
+    <circle cx="40" cy="150" r="20" fill="#0f172a"/><text x="40" y="157" text-anchor="middle" class="t" font-size="18">1</text>
+    <text x="400" y="138" text-anchor="middle" class="h" fill="#0f172a">POST /auth/login</text>
+    <text x="605" y="138" text-anchor="middle" class="s" fill="#9a3412" font-size="16">ruta pública</text>
+    <!-- 2 jwt -->
+    <line x1="955" y1="230" x2="105" y2="230" stroke="#16a34a" stroke-width="5" stroke-dasharray="14 8" marker-end="url(#mg)"/>
+    <circle cx="40" cy="230" r="20" fill="#0f172a"/><text x="40" y="237" text-anchor="middle" class="t" font-size="18">2</text>
+    <rect x="410" y="196" width="400" height="34" rx="17" fill="#fef9c3" stroke="#ca8a04" stroke-width="2"/>
+    <text x="610" y="220" text-anchor="middle" class="h" fill="#713f12">🔑 JWT válido 20 min</text>
+
+    <!-- 3 books -->
+    <line x1="95" y1="350" x2="1170" y2="350" stroke="#ea7c12" stroke-width="5" marker-end="url(#mo)"/>
+    <circle cx="300" cy="350" r="9" fill="#f28c28"/><circle cx="505" cy="350" r="9" fill="#ea7c12"/><circle cx="710" cy="350" r="9" fill="#c2410c"/>
+    <circle cx="40" cy="350" r="20" fill="#0f172a"/><text x="40" y="357" text-anchor="middle" class="t" font-size="18">3</text>
+    <text x="400" y="338" text-anchor="middle" class="h" fill="#0f172a">GET /books</text>
+    <text x="860" y="338" text-anchor="middle" class="s" fill="#9a3412" font-size="16">elige Books-2 (menos carga)</text>
+    <line x1="1180" y1="400" x2="105" y2="400" stroke="#16a34a" stroke-width="4" stroke-dasharray="14 8" marker-end="url(#mg)"/>
+    <text x="640" y="392" text-anchor="middle" class="s" fill="#15803d">200 · catálogo</text>
+
+    <!-- 4 pedido -->
+    <line x1="95" y1="480" x2="1395" y2="480" stroke="#ea7c12" stroke-width="5" marker-end="url(#mo)"/>
+    <circle cx="300" cy="480" r="9" fill="#f28c28"/><circle cx="710" cy="480" r="9" fill="#c2410c"/>
+    <rect x="455" y="460" width="100" height="40" rx="20" fill="#16a34a"/><text x="505" y="487" text-anchor="middle" class="t" font-size="18">✓ JWT</text>
+    <circle cx="40" cy="480" r="20" fill="#0f172a"/><text x="40" y="487" text-anchor="middle" class="t" font-size="18">4</text>
+    <text x="300" y="468" text-anchor="middle" class="h" fill="#0f172a" dx="-40">POST /pedidos + JWT</text>
+    <line x1="1405" y1="530" x2="105" y2="530" stroke="#16a34a" stroke-width="4" stroke-dasharray="14 8" marker-end="url(#mg)"/>
+    <text x="760" y="522" text-anchor="middle" class="s" fill="#15803d">201 · pedido creado y stock apartado</text>
+
+    <!-- 5 pago -->
+    <line x1="95" y1="610" x2="1610" y2="610" stroke="#ea7c12" stroke-width="5" marker-end="url(#mo)"/>
+    <circle cx="300" cy="610" r="9" fill="#f28c28"/><circle cx="710" cy="610" r="9" fill="#c2410c"/>
+    <rect x="455" y="590" width="100" height="40" rx="20" fill="#16a34a"/><text x="505" y="617" text-anchor="middle" class="t" font-size="18">✓ JWT</text>
+    <circle cx="40" cy="610" r="20" fill="#0f172a"/><text x="40" y="617" text-anchor="middle" class="t" font-size="18">5</text>
+    <text x="300" y="598" text-anchor="middle" class="h" fill="#0f172a" dx="-40">POST /pagos + JWT</text>
+    <line x1="1620" y1="660" x2="105" y2="660" stroke="#16a34a" stroke-width="4" stroke-dasharray="14 8" marker-end="url(#mg)"/>
+    <text x="860" y="652" text-anchor="middle" class="s" fill="#15803d">201 · pago registrado → al aprobarse, el pedido queda pagado</text>
+  </g>
+  <!-- leyenda -->
+  <g font-size="18">
+    <line x1="120" y1="745" x2="190" y2="745" stroke="#ea7c12" stroke-width="5" marker-end="url(#mo)"/><text x="205" y="751" class="s" fill="#334155">petición</text>
+    <line x1="330" y1="745" x2="400" y2="745" stroke="#16a34a" stroke-width="4" stroke-dasharray="14 8" marker-end="url(#mg)"/><text x="415" y="751" class="s" fill="#334155">respuesta</text>
+    <circle cx="560" cy="745" r="9" fill="#ea7c12"/><text x="580" y="751" class="s" fill="#334155">pasa por la infraestructura</text>
+    <rect x="860" y="727" width="90" height="36" rx="18" fill="#16a34a"/><text x="905" y="751" text-anchor="middle" class="t" font-size="16">✓ JWT</text><text x="965" y="751" class="s" fill="#334155">el gateway valida firma, expiración y rol</text>
+  </g>
+</svg>
+</body></html>
